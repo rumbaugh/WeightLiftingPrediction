@@ -1,6 +1,6 @@
 ---
 title: "Prediction Assignment"
-output: rmarkdown::github_document
+output: html
 ---
 
 ```{r setup, include=FALSE}
