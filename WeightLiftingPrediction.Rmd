@@ -1,20 +1,18 @@
 ---
 title: "Prediction Assignment"
-output:
-  html_document: default
-  pdf_document: default
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#setwd('/home/rumbaugh/WeightLiftingPrediction/')
+setwd('/home/rumbaugh/WeightLiftingPrediction/')
 library(caret)
 ```
 
 Our goal is to predict whether exercises were performed 'correctly' or not. Our data consist of the output of devices worn while individuals performed excercises using dumbbells in various manners. 
 
 ```{r}
-initdf = read.csv('pml-training.csv')
+initdf = read.csv('../pml-training.csv')
 ```
 
 A summary of the data shows there are 160 columns. Part of this summary is shown in the Appendix. The column we are most interested in is *classe*, which details the manner in which an exercise was performed. It is a factor variable, taking five different values. 
@@ -33,7 +31,8 @@ In addition, some columns mostly contain missing values, so we remove those colu
 
 ```{r}
 bad_features = c('new_window', 'kurtosis_roll_belt', 'kurtosis_picth_belt', 'kurtosis_yaw_belt', 'skewness_roll_belt', 'skewness_roll_belt.1', 'skewness_yaw_belt', 'max_yaw_belt', 'min_yaw_belt', 'amplitude_yaw_belt', 'kurtosis_roll_arm', 'kurtosis_picth_arm', 'kurtosis_yaw_arm', 'skewness_roll_arm', 'skewness_pitch_arm', 'skewness_yaw_arm', 'kurtosis_roll_dumbbell', 'kurtosis_picth_dumbbell', 'kurtosis_yaw_dumbbell', 'skewness_roll_dumbbell', 'skewness_pitch_dumbbell', 'skewness_yaw_dumbbell', 'max_yaw_dumbbell', 'amplitude_yaw_dumbbell', 'kurtosis_roll_forearm', 'kurtosis_picth_forearm', 'kurtosis_yaw_forearm', 'skewness_roll_forearm', 'skewness_pitch_forearm', 'skewness_yaw_forearm', 'max_yaw_forearm', 'min_yaw_forearm', 'amplitude_yaw_forearm','min_yaw_dumbbell')
-not_predictors = c('X', 'user_name', 'raw_timestamp_part_1', 'raw_timestamp_part_2', 'cvtd_timestamp', 'num_window')
+not_predictors = c('X', 'user_name', 'raw_timestamp_part_1', 'raw_timestamp_part_2',
+                   'cvtd_timestamp', 'num_window')
 traindf = traindf[,!(names(traindf) %in% c(bad_features, not_predictors))]
 traindf = traindf[,colSums(is.na(traindf)) == 0]
 ```
@@ -50,7 +49,8 @@ traindf = traindf[inTrain,]
 We fit three mdoels to the training set: Random Forest, Stochastic Gradient Boosting, and Linear Discrimant Analysis. Our goal is to stack the results of these models to create an ensemble method.
 ``` {r eval=F}
 modFit1 = train(classe~., method = 'rf', data = prelim_traindf, preProcess = c('scale', 'center'))
-modFit2 = train(classe~., method = 'gbm', data = prelim_traindf, preProcess = c('center', 'scale'), verbose=F)
+modFit2 = train(classe~., method = 'gbm', data = prelim_traindf, preProcess = c('center', 'scale'),
+                verbose=F)
 modFit3 = train(classe~., method = 'lda', data = prelim_traindf, preProcess = c('scale', 'center'))
 pred1 = predict(modFit1, testdf)
 pred2 = predict(modFit2, testdf)
@@ -91,7 +91,8 @@ if (acc3 > acc1 & acc3 > acc2) most_accurate = 3
 # Perform stacking, taking most popular prediction for each row, or
 # prediction of most accurate model if none agree
 stackdf = data.frame(pred1, pred2, pred3)
-stack_pred = sapply(1:nrow(stackdf), function(i) Mode(stackdf[i,], returnNull = T, customNull = stackdf[[i, most_accurate]]))
+stack_pred = sapply(1:nrow(stackdf), function(i) Mode(stackdf[i,],
+            returnNull = T, customNull = stackdf[[i, most_accurate]]))
 sprintf('Stacked Acc.: %.4f', sum(stack_pred == testdf$classe)/length(stack_pred))
 ```
 With over 99% accuracy, the random forest method is the most accurate of the three. While stacking creates better predictions that two out of the three models, it actually performs worse than the Random Forest model alone, which is therefore our best model. The 99% accuracy was evaluated on the testing set, separate from where the model was trained, so this represents our estimate of the out-of-sample error rate. 
