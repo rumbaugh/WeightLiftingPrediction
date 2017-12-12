@@ -1,6 +1,6 @@
 ---
 title: "Prediction Assignment"
-output: html
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
